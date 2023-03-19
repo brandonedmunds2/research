@@ -10,6 +10,13 @@ authors = [
 ]
 description = "research"
 readme = "README.md"
+dependencies = [
+    "numpy",
+    "torch",
+    "torchvision",
+    "matplotlib",
+    "opacus"
+]
 requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Python :: 3",
