@@ -4,11 +4,9 @@ import random
 from torch import nn, optim
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
-from models import resnet20, simple_net, resnet18
-from sklearn.model_selection import train_test_split
+from models import resnet9
 from constants import *
-from cust_opacus import CustomPrivacyEngine
-from prune import prune_grads, prune_mask
+from opacus import PrivacyEngine
 
 np.random.seed(0)
 random.seed(0)
@@ -16,7 +14,7 @@ torch.manual_seed(0)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def train(train_loader, model, optimizer, criterion,masks=None):
+def train(train_loader, model, optimizer, criterion):
     model=model.train()
     losses = []
     correct=0
@@ -27,7 +25,6 @@ def train(train_loader, model, optimizer, criterion,masks=None):
         output = model(data)
         loss = criterion(output, target)
         loss.backward()
-        prune_grads(optimizer,masks)
         optimizer.step()
         losses.append(loss.item())
         correct += torch.sum(output.argmax(axis=1) == target)
@@ -66,16 +63,9 @@ def load_data():
             transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD)
         ])
     )
-    private_dataset, public_dataset=train_test_split(train_dataset,test_size=0.05)
-    private_loader = torch.utils.data.DataLoader(
-        dataset=private_dataset,
-        batch_size=PRIVATE_HYPERPARAMS["train_batch"],
-        num_workers=NUM_WORKERS,
-        pin_memory=PIN_MEMORY,
-    )
-    public_loader = torch.utils.data.DataLoader(
-        dataset=public_dataset,
-        batch_size=PUBLIC_HYPERPARAMS["train_batch"],
+    train_loader = torch.utils.data.DataLoader(
+        dataset=train_dataset,
+        batch_size=TRAIN_BATCH,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
     )
@@ -86,7 +76,7 @@ def load_data():
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
     )
-    return private_loader, public_loader, test_loader
+    return train_loader, test_loader
 
 def plt_losses(train_losses,test_losses,epochs):
     plt.figure()
@@ -98,47 +88,33 @@ def plt_losses(train_losses,test_losses,epochs):
     plt.legend(loc='best')
     plt.show()
 
-def train_test(model,train_loader,test_loader,optimizer,criterion, hyperparams,masks=None,privacy_engine=None):
+def train_test(model,train_loader,test_loader,optimizer,criterion,privacy_engine):
     train_losses=[]
     test_losses=[]
-    for epoch in range(hyperparams["epochs"]):
-        train_loss,train_acc=train(train_loader,model,optimizer,criterion,masks)
+    for epoch in range(EPOCHS):
+        train_loss,train_acc=train(train_loader,model,optimizer,criterion)
         train_losses.append(train_loss)
         test_loss,test_acc=test(test_loader,model,criterion)
         test_losses.append(test_loss)
-        if(privacy_engine!=None):
-            epsilon=privacy_engine.accountant.get_epsilon(delta=DELTA)
-        else:
-            epsilon=-1
+        epsilon=privacy_engine.accountant.get_epsilon(delta=DELTA)
         print(f'Epoch: {epoch}, Train Loss: {train_loss}, Test Loss: {test_loss}, Train Acc: {train_acc}, Test Acc: {test_acc}, Epsilon: {epsilon}')
-    # plt_losses(train_losses,test_losses,hyperparams["epochs"])
+    plt_losses(train_losses,test_losses,EPOCHS)
 
 def main():
-    private_loader,public_loader,test_loader=load_data()
-    model=resnet18()
-    # model=resnet20()
-    # model=simple_net(3*32*32,NUM_CLASSES)
-    model.fc = torch.nn.Linear(model.fc.in_features, NUM_CLASSES)
-    model=model.to(device)
+    train_loader,test_loader=load_data()
+    model=resnet9(NUM_CLASSES)
     criterion=nn.CrossEntropyLoss()
-    print("Public")
-    optimizer=optim.Adam(model.parameters(),lr=PUBLIC_HYPERPARAMS["lr"])
-    train_test(model,public_loader,test_loader,optimizer,criterion,PUBLIC_HYPERPARAMS)
-    print("Prune")
-    masks=prune_mask(model,PRUNE_TYPE,PRUNE_AMOUNT,PRUNE_LARGEST)
-    print("Private")
-    optimizer=optim.Adam(model.parameters(),lr=PRIVATE_HYPERPARAMS["lr"])
-    privacy_engine = CustomPrivacyEngine(masks=masks,secure_mode=False)
-    model=model.train()
-    model, optimizer, private_loader = privacy_engine.make_private(
+    optimizer=optim.NAdam(model.parameters(),lr=LR)
+    privacy_engine = PrivacyEngine(secure_mode=False)
+    model, optimizer, train_loader = privacy_engine.make_private(
         module=model,
         optimizer=optimizer,
-        data_loader=private_loader,
+        data_loader=train_loader,
         noise_multiplier=NOISE_MULTIPLIER,
         max_grad_norm=MAX_GRAD_NORM,
     )
     model=model.to(device)
-    train_test(model,private_loader,test_loader,optimizer,criterion,PRIVATE_HYPERPARAMS,masks,privacy_engine)
+    train_test(model,train_loader,test_loader,optimizer,criterion,privacy_engine)
 
 if __name__ == "__main__":
     main()
