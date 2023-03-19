@@ -50,7 +50,7 @@ class ResNet9(nn.Module):
         act_func: nn.Module = nn.Mish,
         scale_norm: bool = False,
         norm_layer: str = 'batch',
-        num_groups: tuple[int, ...] = (32, 32, 32, 32),
+        num_groups: tuple = (32, 32, 32, 32),
     ):
         """9-layer Residual Network. Architecture:
         conv-conv-Residual(conv, conv)-conv-conv-Residual(conv-conv)-FC
@@ -150,7 +150,7 @@ class ResNet9LRF(nn.Module):
         act_func: nn.Module = nn.Mish,
         scale_norm: bool = False,
         norm_layer: str = 'batch',
-        num_groups: tuple[int, ...] = (32, 32, 32, 32),
+        num_groups: tuple = (32, 32, 32, 32),
     ):
         """9-layer Residual Network. Architecture:
         conv-conv-Residual(conv, conv)-conv-conv-Residual(conv-conv)-FC
