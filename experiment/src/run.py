@@ -4,8 +4,8 @@ import random
 from torch import nn, optim
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
-from models import resnet9
-from constants import *
+from experiment.src.models import resnet9
+from experiment.src.constants import *
 from opacus import PrivacyEngine
 
 np.random.seed(0)
@@ -117,4 +117,4 @@ def main():
     train_test(model,train_loader,test_loader,optimizer,criterion,privacy_engine)
 
 if __name__ == "__main__":
-    main()
+    pass
