@@ -4,15 +4,17 @@ import random
 from torch import nn, optim
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
-from experiment.src.models import resnet9
-from experiment.src.constants import *
+from models import wrn, simple_net
+from constants import *
 from opacus import PrivacyEngine
+from mia import attack
 
 np.random.seed(0)
 random.seed(0)
 torch.manual_seed(0)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(device)
 
 def train(train_loader, model, optimizer, criterion):
     model=model.train()
@@ -29,7 +31,7 @@ def train(train_loader, model, optimizer, criterion):
         losses.append(loss.item())
         correct += torch.sum(output.argmax(axis=1) == target)
         incorrect += torch.sum(output.argmax(axis=1) != target)
-    return np.mean(losses), (100.0 * correct / (correct+incorrect))
+    return losses, (100.0 * correct / (correct+incorrect))
 
 def test(test_loader, model, criterion):
     model=model.eval()
@@ -43,7 +45,7 @@ def test(test_loader, model, criterion):
             losses.append(criterion(output, target).item())
             correct += torch.sum(output.argmax(axis=1) == target)
             incorrect += torch.sum(output.argmax(axis=1) != target)
-    return np.mean(losses), (100.0 * correct / (correct+incorrect))
+    return losses, (100.0 * correct / (correct+incorrect))
 
 def load_data():
     train_dataset=datasets.CIFAR10(
@@ -88,33 +90,25 @@ def plt_losses(train_losses,test_losses,epochs):
     plt.legend(loc='best')
     plt.show()
 
-def train_test(model,train_loader,test_loader,optimizer,criterion,privacy_engine):
+def train_test(model,train_loader,test_loader,optimizer,criterion):
     train_losses=[]
     test_losses=[]
     for epoch in range(EPOCHS):
         train_loss,train_acc=train(train_loader,model,optimizer,criterion)
-        train_losses.append(train_loss)
+        train_losses.append(np.mean(train_loss))
         test_loss,test_acc=test(test_loader,model,criterion)
-        test_losses.append(test_loss)
-        epsilon=privacy_engine.accountant.get_epsilon(delta=DELTA)
-        print(f'Epoch: {epoch}, Train Loss: {train_loss}, Test Loss: {test_loss}, Train Acc: {train_acc}, Test Acc: {test_acc}, Epsilon: {epsilon}')
+        test_losses.append(np.mean(test_loss))
+        print(f'Epoch: {epoch}, Train Loss: {np.mean(train_loss)}, Test Loss: {np.mean(test_loss)}, Train Acc: {train_acc}, Test Acc: {test_acc}')
     plt_losses(train_losses,test_losses,EPOCHS)
+    return np.array(train_loss), np.array(test_loss)
 
 def main():
     train_loader,test_loader=load_data()
-    model=resnet9(NUM_CLASSES)
+    model=simple_net(NUM_CLASSES)
     criterion=nn.CrossEntropyLoss()
-    optimizer=optim.NAdam(model.parameters(),lr=LR)
-    privacy_engine = PrivacyEngine(secure_mode=False)
-    model, optimizer, train_loader = privacy_engine.make_private(
-        module=model,
-        optimizer=optimizer,
-        data_loader=train_loader,
-        noise_multiplier=NOISE_MULTIPLIER,
-        max_grad_norm=MAX_GRAD_NORM,
-    )
+    optimizer=optim.Adam(model.parameters(),lr=LR)
     model=model.to(device)
-    train_test(model,train_loader,test_loader,optimizer,criterion,privacy_engine)
+    attack(*train_test(model,train_loader,test_loader,optimizer,criterion))
 
 if __name__ == "__main__":
-    pass
+    main()
