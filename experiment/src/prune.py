@@ -16,10 +16,10 @@ class CustomL1Unstructured(L1Unstructured):
             mask.view(-1)[topk.indices] = 0
         return mask
 
-def pruner(model,type,amount,largest=False):
+def pruner(model,type,layers,amount,largest=False):
     params=[]
     for name,module in model.named_modules():
-        if(hasattr(module,"weight")):
+        if(name in layers and hasattr(module,"weight")):
             params.append((module,"weight"))
     if(type=="random"):
         prune.global_unstructured(params,pruning_method=prune.RandomUnstructured,amount=amount)
@@ -47,8 +47,8 @@ def get_masks(model,n_pd):
             masks[i]=n_pd[key]
     return masks
 
-def prune_mask(model,type,amount,largest):
-    pruner(model,type,amount,largest)
+def prune_mask(model,type,layers,amount,largest):
+    pruner(model,type,layers,amount,largest)
     n_pd=dict(model.named_buffers())
     end_prune(model)
     masks=get_masks(model,n_pd)

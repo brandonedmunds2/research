@@ -4,10 +4,12 @@ import random
 from torch import nn, optim
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
-from models import wrn, simple_net
+from models import simple_net
 from constants import *
-from opacus import PrivacyEngine
+from opacus.utils.batch_memory_manager import BatchMemoryManager
+from cust_opacus import CustomPrivacyEngine
 from mia import attack
+from prune import prune_mask
 
 np.random.seed(0)
 random.seed(0)
@@ -94,6 +96,9 @@ def train_test(model,train_loader,test_loader,optimizer,criterion):
     train_losses=[]
     test_losses=[]
     for epoch in range(EPOCHS):
+        # with BatchMemoryManager(
+        #     data_loader=train_loader, max_physical_batch_size=PHYSICAL_BATCH, optimizer=optimizer
+        # ) as train_loader:
         train_loss,train_acc=train(train_loader,model,optimizer,criterion)
         train_losses.append(np.mean(train_loss))
         test_loss,test_acc=test(test_loader,model,criterion)
@@ -104,11 +109,23 @@ def train_test(model,train_loader,test_loader,optimizer,criterion):
 
 def main():
     train_loader,test_loader=load_data()
-    model=simple_net(NUM_CLASSES)
+    model=simple_net(32*32*3,NUM_CLASSES)
     criterion=nn.CrossEntropyLoss()
-    optimizer=optim.Adam(model.parameters(),lr=LR)
+    optimizer=optim.SGD(model.parameters(),lr=LR)
+    # privacy_engine = CustomPrivacyEngine()
+    # model, optimizer, train_loader = privacy_engine.make_private(
+    #     module=model,
+    #     optimizer=optimizer,
+    #     data_loader=train_loader,
+    #     noise_multiplier=NOISE_MULTIPLIER,
+    #     max_grad_norm=MAX_GRAD_NORM,
+    # )
     model=model.to(device)
-    attack(*train_test(model,train_loader,test_loader,optimizer,criterion))
+    train_test(model,train_loader,test_loader,optimizer,criterion)
+    masks=prune_mask(model,PRUNE_TYPE,PRUNE_LAYERS,PRUNE_AMOUNT,PRUNE_LARGEST)
+    test_loss,test_acc=test(test_loader,model,criterion)
+    train_loss,test_acc=test(train_loader,model,criterion)
+    attack(train_loss,test_loss)
 
 if __name__ == "__main__":
     main()
