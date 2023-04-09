@@ -48,6 +48,8 @@ def get_masks(model,n_pd):
     return masks
 
 def prune_mask(model,type,layers,amount,largest):
+    if(len(layers)==0):
+        return {}
     pruner(model,type,layers,amount,largest)
     n_pd=dict(model.named_buffers())
     end_prune(model)
