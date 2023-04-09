@@ -54,7 +54,7 @@ def test(test_loader, model, criterion):
             incorrect += torch.sum(output.argmax(axis=1) != target)
     return losses, (100.0 * correct / (correct+incorrect))
 
-def load_data():
+def load_data(attack=False):
     train_dataset=datasets.CIFAR10(
         LOC+"data",
         train=True,
@@ -72,15 +72,21 @@ def load_data():
             transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD)
         ])
     )
+    if(attack):
+        train_batch=1
+        test_batch=1
+    else:
+        train_batch=TRAIN_BATCH
+        test_batch=TEST_BATCH
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset,
-        batch_size=TRAIN_BATCH,
+        batch_size=train_batch,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
     )
     test_loader = torch.utils.data.DataLoader(
         dataset=test_dataset,
-        batch_size=TEST_BATCH,
+        batch_size=test_batch,
         shuffle=True,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
@@ -128,6 +134,7 @@ def main():
     model=model.to(device)
     train_test(model,train_loader,test_loader,optimizer,criterion)
     masks=prune_mask(model,PRUNE_TYPE,PRUNE_LAYERS,PRUNE_AMOUNT,PRUNE_LARGEST)
+    train_loader,test_loader=load_data(attack=True)
     test_loss,test_acc=test(test_loader,model,criterion)
     train_loss,train_acc=test(train_loader,model,criterion)
     print(f'Test Acc: {test_acc}')
