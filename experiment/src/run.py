@@ -118,7 +118,7 @@ def train_test(model,train_loader,test_loader,optimizer,criterion):
     plt_losses(train_losses,test_losses,EPOCHS)
     return np.array(train_loss), np.array(test_loss)
 
-def main():
+def main(prune_layers,prune_amount):
     print_constants()
     train_loader,test_loader=load_data()
     model=simple_net(32*32*3,NUM_CLASSES)
@@ -134,7 +134,7 @@ def main():
     # )
     model=model.to(device)
     train_test(model,train_loader,test_loader,optimizer,criterion)
-    masks=prune_mask(model,PRUNE_TYPE,PRUNE_LAYERS,PRUNE_AMOUNT,PRUNE_LARGEST)
+    masks=prune_mask(model,PRUNE_TYPE,prune_layers,prune_amount,PRUNE_LARGEST)
     train_loader,test_loader=load_data(attack=True)
     test_loss,test_acc=test(test_loader,model,criterion)
     train_loss,train_acc=test(train_loader,model,criterion)

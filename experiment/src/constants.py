@@ -5,8 +5,8 @@ TEST_BATCH=1024
 PHYSICAL_BATCH=64
 
 PRUNE_TYPE="magnitude"
-PRUNE_LAYERS=()
-PRUNE_AMOUNT=0.0
+# PRUNE_LAYERS=()
+# PRUNE_AMOUNT=0.0
 PRUNE_LARGEST=False
 
 GN_GROUPS=4
@@ -27,8 +27,8 @@ NUM_CLASSES=10
 
 def print_constants():
     print(PRUNE_TYPE)
-    print(PRUNE_AMOUNT)
-    print(PRUNE_LAYERS)
+    # print(PRUNE_AMOUNT)
+    # print(PRUNE_LAYERS)
     print(PRUNE_LARGEST)
 
 if __name__ == "__main__":
