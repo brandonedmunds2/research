@@ -6,7 +6,7 @@ def attack(loss_train,loss_test):
         AttackInputData(
             loss_train = loss_train,
             loss_test = loss_test))
-    print(attacks_result.calculate_pd_dataframe())
+    print(attacks_result.summary())
     
 if __name__ == "__main__":
     pass
