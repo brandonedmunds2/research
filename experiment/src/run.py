@@ -4,12 +4,12 @@ import random
 from torch import nn, optim
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
-from models import simple_net
-from constants import *
+from experiment.src.models import simple_net
+from experiment.src.constants import *
 from opacus.utils.batch_memory_manager import BatchMemoryManager
-from cust_opacus import CustomPrivacyEngine
-from mia import attack
-from prune import prune_mask
+from experiment.src.cust_opacus import CustomPrivacyEngine
+from experiment.src.mia import attack
+from experiment.src.prune import prune_mask
 
 np.random.seed(0)
 random.seed(0)
