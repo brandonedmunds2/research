@@ -129,7 +129,8 @@ def main():
     train_test(model,train_loader,test_loader,optimizer,criterion)
     masks=prune_mask(model,PRUNE_TYPE,PRUNE_LAYERS,PRUNE_AMOUNT,PRUNE_LARGEST)
     test_loss,test_acc=test(test_loader,model,criterion)
-    train_loss,test_acc=test(train_loader,model,criterion)
+    train_loss,train_acc=test(train_loader,model,criterion)
+    print(f'Test Acc: {test_acc}')
     attack(np.array(train_loss),np.array(test_loss))
 
 if __name__ == "__main__":
