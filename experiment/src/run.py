@@ -4,9 +4,14 @@ import random
 from torch import nn, optim
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
-from experiment.src.models import simple_net
-from experiment.src.constants import *
 from opacus.utils.batch_memory_manager import BatchMemoryManager
+try:
+    from experiment.src.constants import *
+except:
+    import sys
+    # sys.path.insert(1, 'C:\Users\brand\research')
+    from experiment.src.constants import *
+from experiment.src.models import simple_net
 from experiment.src.cust_opacus import CustomPrivacyEngine
 from experiment.src.mia import attack
 from experiment.src.prune import prune_mask
@@ -125,7 +130,7 @@ def main():
     masks=prune_mask(model,PRUNE_TYPE,PRUNE_LAYERS,PRUNE_AMOUNT,PRUNE_LARGEST)
     test_loss,test_acc=test(test_loader,model,criterion)
     train_loss,test_acc=test(train_loader,model,criterion)
-    attack(train_loss,test_loss)
+    attack(np.array(train_loss),np.array(test_loss))
 
 if __name__ == "__main__":
     main()
