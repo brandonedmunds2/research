@@ -25,5 +25,11 @@ CIFAR10_STD=(0.25,0.25,0.25)
 
 NUM_CLASSES=10
 
+def print_constants():
+    print(PRUNE_TYPE)
+    print(PRUNE_AMOUNT)
+    print(PRUNE_LAYERS)
+    print(PRUNE_LARGEST)
+
 if __name__ == "__main__":
     pass

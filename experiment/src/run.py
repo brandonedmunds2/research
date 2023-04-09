@@ -119,6 +119,7 @@ def train_test(model,train_loader,test_loader,optimizer,criterion):
     return np.array(train_loss), np.array(test_loss)
 
 def main():
+    print_constants()
     train_loader,test_loader=load_data()
     model=simple_net(32*32*3,NUM_CLASSES)
     criterion=nn.CrossEntropyLoss()
