@@ -9,7 +9,7 @@ try:
     from experiment.src.constants import *
 except:
     import sys
-    # sys.path.insert(1, 'C:\Users\brand\research')
+    sys.path.insert(1, "C:\\Users\\brand\\research")
     from experiment.src.constants import *
 from experiment.src.models import simple_net
 from experiment.src.cust_opacus import CustomPrivacyEngine
