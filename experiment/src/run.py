@@ -12,7 +12,7 @@ except:
     sys.path.insert(1, "C:\\Users\\brand\\research")
     from experiment.src.constants import *
 from experiment.src.models import simple_net
-from experiment.src.cust_opacus import MaskedPrivacyEngine, AmountPrivacyEngine
+from experiment.src.cust_opacus import MaskedPrivacyEngine
 from experiment.src.mia import attack
 from experiment.src.prune import prune_mask
 
@@ -103,28 +103,35 @@ def plt_losses(train_losses,test_losses,epochs):
     plt.legend(loc='best')
     plt.show()
 
-def train_test(model,train_loader,test_loader,optimizer,criterion):
+def train_test(model,train_loader,test_loader,optimizer,criterion,epochs,private):
     train_losses=[]
     test_losses=[]
-    for epoch in range(EPOCHS):
-        with BatchMemoryManager(
-            data_loader=train_loader, max_physical_batch_size=PHYSICAL_BATCH, optimizer=optimizer
-        ) as train_loader:
+    for epoch in range(epochs):
+        if(private):
+            with BatchMemoryManager(
+                data_loader=train_loader, max_physical_batch_size=PHYSICAL_BATCH, optimizer=optimizer
+            ) as train_loader:
+                train_loss,train_acc=train(train_loader,model,optimizer,criterion)
+        else:
             train_loss,train_acc=train(train_loader,model,optimizer,criterion)
         train_losses.append(np.mean(train_loss))
         test_loss,test_acc=test(test_loader,model,criterion)
         test_losses.append(np.mean(test_loss))
         print(f'Epoch: {epoch}, Train Loss: {np.mean(train_loss)}, Test Loss: {np.mean(test_loss)}, Train Acc: {train_acc}, Test Acc: {test_acc}')
-    plt_losses(train_losses,test_losses,EPOCHS)
+    plt_losses(train_losses,test_losses,epochs)
     return np.array(train_loss), np.array(test_loss)
 
-def main(prune_layers=(),prune_amount=0.0,noise_drop_amount=0.0):
+def main(prune_layers=('fc1','fc2'),prune_amount=0.5):
     print_constants()
     train_loader,test_loader=load_data()
     model=simple_net(32*32*3,NUM_CLASSES)
     criterion=nn.CrossEntropyLoss()
     optimizer=optim.SGD(model.parameters(),lr=LR)
-    privacy_engine = AmountPrivacyEngine(amount=noise_drop_amount,secure_mode=False)
+    model=model.to(device)
+    # train_test(model,train_loader,test_loader,optimizer,criterion,PRE_EPOCHS,False)
+    masks=prune_mask(model,PRUNE_TYPE,prune_layers,prune_amount,PRUNE_LARGEST)
+    model=model.train()
+    privacy_engine = MaskedPrivacyEngine(masks=masks,secure_mode=False)
     model, optimizer, train_loader = privacy_engine.make_private(
         module=model,
         optimizer=optimizer,
@@ -133,8 +140,7 @@ def main(prune_layers=(),prune_amount=0.0,noise_drop_amount=0.0):
         max_grad_norm=MAX_GRAD_NORM
     )
     model=model.to(device)
-    train_test(model,train_loader,test_loader,optimizer,criterion)
-    # masks=prune_mask(model,PRUNE_TYPE,prune_layers,prune_amount,PRUNE_LARGEST)
+    train_test(model,train_loader,test_loader,optimizer,criterion,EPOCHS,True)
     train_loader,test_loader=load_data(attack=True)
     test_loss,test_acc=test(test_loader,model,criterion)
     train_loss,train_acc=test(train_loader,model,criterion)
