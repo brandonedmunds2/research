@@ -121,15 +121,16 @@ def train_test(model,train_loader,test_loader,optimizer,criterion,epochs,private
     plt_losses(train_losses,test_losses,epochs)
     return np.array(train_loss), np.array(test_loss)
 
-def main(prune_layers=('fc1','fc2'),prune_amount=0.5):
+def main(prune_layers=(),prune_amount=0.0):
     print_constants()
     train_loader,test_loader=load_data()
     model=simple_net(32*32*3,NUM_CLASSES)
     criterion=nn.CrossEntropyLoss()
     optimizer=optim.SGD(model.parameters(),lr=LR)
     model=model.to(device)
-    # train_test(model,train_loader,test_loader,optimizer,criterion,PRE_EPOCHS,False)
+    train_test(model,train_loader,test_loader,optimizer,criterion,PRE_EPOCHS,False)
     masks=prune_mask(model,PRUNE_TYPE,prune_layers,prune_amount,PRUNE_LARGEST)
+    optimizer=optim.SGD(model.parameters(),lr=LR)
     model=model.train()
     privacy_engine = MaskedPrivacyEngine(masks=masks,secure_mode=False)
     model, optimizer, train_loader = privacy_engine.make_private(

@@ -91,7 +91,7 @@ class MaskedDPOptimizer(DPOptimizer):
                 secure_mode=self.secure_mode,
             )
             if(i in self.masks):
-                noise.mul_(self.masks[i])
+                noise.mul_(torch.logical_not(self.masks[i]).to(torch.int32))
             p.grad = (p.summed_grad + noise).view_as(p)
 
             _mark_as_processed(p.summed_grad)

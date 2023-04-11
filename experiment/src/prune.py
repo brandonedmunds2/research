@@ -45,6 +45,8 @@ def get_masks(model,n_pd):
         key=n_p[0]+"_mask"
         if(key in n_pd):
             masks[i]=n_pd[key]
+        else:
+            masks[i]=torch.ones_like(n_p[1])
     return masks
 
 def prune_mask(model,type,layers,amount,largest):
