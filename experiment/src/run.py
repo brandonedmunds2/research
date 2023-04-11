@@ -5,6 +5,7 @@ from torch import nn, optim
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from opacus.utils.batch_memory_manager import BatchMemoryManager
+from opacus import PrivacyEngine
 try:
     from experiment.src.constants import *
 except:
@@ -121,7 +122,7 @@ def train_test(model,train_loader,test_loader,optimizer,criterion,epochs,private
     plt_losses(train_losses,test_losses,epochs)
     return np.array(train_loss), np.array(test_loss)
 
-def main(prune_layers=(),prune_amount=0.0):
+def main(prune_layers=(),prune_amount=0.0,default_opacus=False):
     print_constants()
     train_loader,test_loader=load_data()
     model=simple_net(32*32*3,NUM_CLASSES)
@@ -132,7 +133,10 @@ def main(prune_layers=(),prune_amount=0.0):
     masks=prune_mask(model,PRUNE_TYPE,prune_layers,prune_amount,PRUNE_LARGEST)
     optimizer=optim.SGD(model.parameters(),lr=LR)
     model=model.train()
-    privacy_engine = MaskedPrivacyEngine(masks=masks,secure_mode=False)
+    if(default_opacus):
+        privacy_engine = PrivacyEngine(secure_mode=False)
+    else:
+        privacy_engine = MaskedPrivacyEngine(masks=masks,secure_mode=False)
     model, optimizer, train_loader = privacy_engine.make_private(
         module=model,
         optimizer=optimizer,
