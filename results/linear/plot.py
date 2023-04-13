@@ -46,13 +46,13 @@ def dual_y_plot(data,desc,ax):
     ax.set_xlabel('Sparsity')
 
 fig1,axs1=plt.subplots(1)
-descs=['default','End Mag fc1', 'End Mag fc2', 'End Mag fc1 + fc2',
-       'Partial Noise']
+descs=['default','Partial DPSGD','End Mag fc1', 'End Mag fc2', 'End Mag fc1 + fc2',
+       'Partial Noise','Partial DPSGD fc1','Partial DPSGD fc2','Partial DPSGD fc1 + fc2']
 all_plot(data,descs,axs1)
 
-fig2,axs2=plt.subplots(2,2)
-for i,desc in enumerate(descs[1:]):
-    dual_y_plot(data,desc,axs2[i//2,i%2])
+fig2,axs2=plt.subplots(2,4)
+for i,desc in enumerate(descs[2:]):
+    dual_y_plot(data,desc,axs2[i//4,i%4])
 
 # fig3,axs3=plt.subplots(1)
 # axs3.set_title('First Conv Magnitude Prune 0.02 vs Eps3')
