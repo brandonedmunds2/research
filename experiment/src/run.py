@@ -5,7 +5,6 @@ from torch import nn, optim
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from opacus.utils.batch_memory_manager import BatchMemoryManager
-from opacus import PrivacyEngine
 try:
     from experiment.src.constants import *
 except:
@@ -15,7 +14,6 @@ except:
 from experiment.src.models import simple_net
 from experiment.src.cust_opacus import MaskedPrivacyEngine
 from experiment.src.mia import attack
-from experiment.src.prune import prune_mask
 
 np.random.seed(0)
 random.seed(0)
@@ -104,39 +102,27 @@ def plt_losses(train_losses,test_losses,epochs):
     plt.legend(loc='best')
     plt.show()
 
-def train_test(model,train_loader,test_loader,optimizer,criterion,epochs,private):
+def train_test(model,train_loader,test_loader,optimizer,criterion):
     train_losses=[]
     test_losses=[]
-    for epoch in range(epochs):
-        if(private):
-            with BatchMemoryManager(
-                data_loader=train_loader, max_physical_batch_size=PHYSICAL_BATCH, optimizer=optimizer
-            ) as train_loader:
-                train_loss,train_acc=train(train_loader,model,optimizer,criterion)
-        else:
+    for epoch in range(EPOCHS):
+        with BatchMemoryManager(
+            data_loader=train_loader, max_physical_batch_size=PHYSICAL_BATCH, optimizer=optimizer
+        ) as train_loader:
             train_loss,train_acc=train(train_loader,model,optimizer,criterion)
         train_losses.append(np.mean(train_loss))
         test_loss,test_acc=test(test_loader,model,criterion)
         test_losses.append(np.mean(test_loss))
         print(f'Epoch: {epoch}, Train Loss: {np.mean(train_loss)}, Test Loss: {np.mean(test_loss)}, Train Acc: {train_acc}, Test Acc: {test_acc}')
-    plt_losses(train_losses,test_losses,epochs)
+    plt_losses(train_losses,test_losses,EPOCHS)
     return np.array(train_loss), np.array(test_loss)
 
-def main(prune_layers=(),prune_amount=0.0,default_opacus=False):
-    print_constants()
+def main(amount=0.0,largest=False,strategy='magnitude'):
     train_loader,test_loader=load_data()
     model=simple_net(32*32*3,NUM_CLASSES)
     criterion=nn.CrossEntropyLoss()
     optimizer=optim.SGD(model.parameters(),lr=LR)
-    model=model.to(device)
-    train_test(model,train_loader,test_loader,optimizer,criterion,PRE_EPOCHS,False)
-    masks=prune_mask(model,PRUNE_TYPE,prune_layers,prune_amount,PRUNE_LARGEST)
-    optimizer=optim.SGD(model.parameters(),lr=LR)
-    model=model.train()
-    if(default_opacus):
-        privacy_engine = PrivacyEngine(secure_mode=False)
-    else:
-        privacy_engine = MaskedPrivacyEngine(masks=masks,secure_mode=False)
+    privacy_engine = MaskedPrivacyEngine(amount=amount,largest=largest,strategy=strategy,secure_mode=False)
     model, optimizer, train_loader = privacy_engine.make_private(
         module=model,
         optimizer=optimizer,
@@ -145,7 +131,7 @@ def main(prune_layers=(),prune_amount=0.0,default_opacus=False):
         max_grad_norm=MAX_GRAD_NORM
     )
     model=model.to(device)
-    train_test(model,train_loader,test_loader,optimizer,criterion,EPOCHS,True)
+    train_test(model,train_loader,test_loader,optimizer,criterion)
     train_loader,test_loader=load_data(attack=True)
     test_loss,test_acc=test(test_loader,model,criterion)
     train_loss,train_acc=test(train_loader,model,criterion)
