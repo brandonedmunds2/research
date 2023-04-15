@@ -4,7 +4,8 @@ import numpy as np
 import matplotlib.cm as cm
 from itertools import cycle
 
-data=pandas.read_excel("./results/linear/AuditResults.xlsx",0).fillna("")
+# data=pandas.read_excel("./results/linear/AuditResults.xlsx",0).fillna("")
+data=pandas.read_excel("./results/linear/AuditResults.xlsx",1).fillna("")
 
 def all_plot(data,descs,ax):
     x="Attack AUC"
@@ -46,12 +47,13 @@ def dual_y_plot(data,desc,ax):
     ax.set_xlabel('Sparsity')
 
 fig1,axs1=plt.subplots(1)
-descs=['default','Partial DPSGD','End Mag fc1', 'End Mag fc2', 'End Mag fc1 + fc2',
-       'Partial Noise','Partial DPSGD fc1','Partial DPSGD fc2','Partial DPSGD fc1 + fc2']
+# descs=['default','Partial DPSGD','End Mag fc1', 'End Mag fc2', 'End Mag fc1 + fc2',
+#        'Partial Noise','Partial DPSGD fc1','Partial DPSGD fc2','Partial DPSGD fc1 + fc2']
+descs=data['Description'].unique()
 all_plot(data,descs,axs1)
 
 fig2,axs2=plt.subplots(2,4)
-for i,desc in enumerate(descs[2:]):
+for i,desc in enumerate(descs):
     dual_y_plot(data,desc,axs2[i//4,i%4])
 
 # fig3,axs3=plt.subplots(1)

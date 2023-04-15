@@ -3,7 +3,6 @@ import torch
 import random
 from torch import nn, optim
 import matplotlib.pyplot as plt
-from torchvision import datasets, transforms
 from opacus.utils.batch_memory_manager import BatchMemoryManager
 try:
     from experiment.src.constants import *
@@ -14,6 +13,7 @@ except:
 from experiment.src.models import simple_net
 from experiment.src.cust_opacus import MaskedPrivacyEngine
 from experiment.src.mia import attack
+from experiment.src.data import load_data, load_dataset
 
 np.random.seed(0)
 random.seed(0)
@@ -53,45 +53,6 @@ def test(test_loader, model, criterion):
             incorrect += torch.sum(output.argmax(axis=1) != target)
     return losses, (100.0 * correct / (correct+incorrect))
 
-def load_data(attack=False):
-    train_dataset=datasets.CIFAR10(
-        LOC+"data",
-        train=True,
-        download=True,
-        transform=transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD)
-        ])
-    )
-    test_dataset=datasets.CIFAR10(
-        LOC+"data",
-        train=False,
-        transform=transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD)
-        ])
-    )
-    if(attack):
-        train_batch=1
-        test_batch=1
-    else:
-        train_batch=TRAIN_BATCH
-        test_batch=TEST_BATCH
-    train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset,
-        batch_size=train_batch,
-        num_workers=NUM_WORKERS,
-        pin_memory=PIN_MEMORY,
-    )
-    test_loader = torch.utils.data.DataLoader(
-        dataset=test_dataset,
-        batch_size=test_batch,
-        shuffle=True,
-        num_workers=NUM_WORKERS,
-        pin_memory=PIN_MEMORY,
-    )
-    return train_loader, test_loader
-
 def plt_losses(train_losses,test_losses,epochs):
     plt.figure()
     plt.plot(range(epochs),train_losses, label="Train Loss")
@@ -118,7 +79,8 @@ def train_test(model,train_loader,test_loader,optimizer,criterion):
     return np.array(train_loss), np.array(test_loss)
 
 def main(amount=0.0,largest=False,strategy='magnitude'):
-    train_loader,test_loader=load_data()
+    train_dataset,test_dataset=load_dataset(dataset='cifar10')
+    train_loader,test_loader=load_data(train_dataset,test_dataset)
     model=simple_net(32*32*3,NUM_CLASSES)
     criterion=nn.CrossEntropyLoss()
     optimizer=optim.SGD(model.parameters(),lr=LR)
@@ -132,7 +94,7 @@ def main(amount=0.0,largest=False,strategy='magnitude'):
     )
     model=model.to(device)
     train_test(model,train_loader,test_loader,optimizer,criterion)
-    train_loader,test_loader=load_data(attack=True)
+    train_loader,test_loader=load_data(train_dataset,test_dataset,attack=True)
     test_loss,test_acc=test(test_loader,model,criterion)
     train_loss,train_acc=test(train_loader,model,criterion)
     print(f'Test Acc: {test_acc}')
