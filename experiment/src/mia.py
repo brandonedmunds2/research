@@ -6,7 +6,7 @@ def attack(loss_train,loss_test):
         AttackInputData(
             loss_train = loss_train,
             loss_test = loss_test))
-    print(f'Attack AUC: {attacks_result.single_attack_results[0].get_auc()}')
+    return attacks_result.single_attack_results[0].get_auc()
     
 if __name__ == "__main__":
     pass

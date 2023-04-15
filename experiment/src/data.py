@@ -54,3 +54,6 @@ def load_data(train_dataset,test_dataset,attack=False):
         pin_memory=PIN_MEMORY,
     )
     return train_loader, test_loader
+
+if __name__ == "__main__":
+    pass

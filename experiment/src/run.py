@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import pandas as pd
 import random
 from torch import nn, optim
 import matplotlib.pyplot as plt
@@ -78,7 +79,7 @@ def train_test(model,train_loader,test_loader,optimizer,criterion):
     # plt_losses(train_losses,test_losses,EPOCHS)
     return np.array(train_loss), np.array(test_loss)
 
-def main(amount=0.0,largest=False,strategy='magnitude'):
+def run_instance(amount=0.0,largest=False,strategy='magnitude'):
     train_dataset,test_dataset=load_dataset(dataset='cifar10')
     train_loader,test_loader=load_data(train_dataset,test_dataset)
     model=simple_net(32*32*3,NUM_CLASSES)
@@ -97,9 +98,18 @@ def main(amount=0.0,largest=False,strategy='magnitude'):
     train_loader,test_loader=load_data(train_dataset,test_dataset,attack=True)
     test_loss,test_acc=test(test_loader,model,criterion)
     train_loss,train_acc=test(train_loader,model,criterion)
-    print(f'amount: {amount}, largest: {largest}, strategy: {strategy}')
-    print(f'Test Acc: {test_acc}')
-    attack(np.array(train_loss),np.array(test_loss))
+    attack_auc=attack(np.array(train_loss),np.array(test_loss))
+    return test_acc, attack_auc
+
+def main(params=[(0.0,False,'magnitude')]):
+    columns=['Description','Param','Test Acc (%)','Attack AUC']
+    df=pd.DataFrame(columns=columns)
+    for p in params:
+        print(p)
+        test_acc,attack_auc=run_instance(*p)
+        new={'Description':p[2],'Param':p[0],'Test Acc (%)':test_acc.item(),'Attack AUC':attack_auc}
+        df=df.append(new,ignore_index=True)
+    df.to_csv(LOC+'result.csv',index=False)
 
 if __name__ == "__main__":
     main()
