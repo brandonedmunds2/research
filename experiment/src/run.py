@@ -74,8 +74,8 @@ def train_test(model,train_loader,test_loader,optimizer,criterion):
         train_losses.append(np.mean(train_loss))
         test_loss,test_acc=test(test_loader,model,criterion)
         test_losses.append(np.mean(test_loss))
-        print(f'Epoch: {epoch}, Train Loss: {np.mean(train_loss)}, Test Loss: {np.mean(test_loss)}, Train Acc: {train_acc}, Test Acc: {test_acc}')
-    plt_losses(train_losses,test_losses,EPOCHS)
+        # print(f'Epoch: {epoch}, Train Loss: {np.mean(train_loss)}, Test Loss: {np.mean(test_loss)}, Train Acc: {train_acc}, Test Acc: {test_acc}')
+    # plt_losses(train_losses,test_losses,EPOCHS)
     return np.array(train_loss), np.array(test_loss)
 
 def main(amount=0.0,largest=False,strategy='magnitude'):
@@ -97,6 +97,7 @@ def main(amount=0.0,largest=False,strategy='magnitude'):
     train_loader,test_loader=load_data(train_dataset,test_dataset,attack=True)
     test_loss,test_acc=test(test_loader,model,criterion)
     train_loss,train_acc=test(train_loader,model,criterion)
+    print(f'amount: {amount}, largest: {largest}, strategy: {strategy}')
     print(f'Test Acc: {test_acc}')
     attack(np.array(train_loss),np.array(test_loss))
 
