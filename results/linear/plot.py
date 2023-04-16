@@ -7,9 +7,7 @@ from itertools import cycle
 # data=pandas.read_excel("./results/linear/AuditResults.xlsx",0).fillna("")
 data=pandas.read_excel("./results/linear/AuditResults.xlsx",1).fillna("")
 
-def all_plot(data,descs,ax):
-    x="Attack AUC"
-    y="Test Acc (%)"
+def all_plot(data,descs,ax,x="Attack AUC",y="Test Acc (%)"):
     ax.set_xlabel(x)
     ax.set_ylabel(y)
     styles=cycle(['h-','^-','+-','*-','d-','x-','o-','.-','s-'])
@@ -52,9 +50,16 @@ fig1,axs1=plt.subplots(1)
 descs=data['Description'].unique()
 all_plot(data,descs,axs1)
 
-fig2,axs2=plt.subplots(2,4)
+fig2,axs2=plt.subplots(2,2)
 for i,desc in enumerate(descs):
-    dual_y_plot(data,desc,axs2[i//4,i%4])
+    dual_y_plot(data,desc,axs2[i//2,i%2])
+
+fig3,axs3=plt.subplots(2)
+descs=data['Description'].unique()
+all_plot(data,descs,axs3[0],x="Param",y="Attack AUC")
+all_plot(data,descs,axs3[1],x="Param",y="Test Acc (%)")
+axs3[0].set_xlabel("Sparsity")
+axs3[1].set_xlabel("Sparsity")
 
 # fig3,axs3=plt.subplots(1)
 # axs3.set_title('First Conv Magnitude Prune 0.02 vs Eps3')
