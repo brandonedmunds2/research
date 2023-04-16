@@ -75,14 +75,16 @@ def train_test(model,train_loader,test_loader,optimizer,criterion):
         train_losses.append(np.mean(train_loss))
         test_loss,test_acc=test(test_loader,model,criterion)
         test_losses.append(np.mean(test_loss))
-        # print(f'Epoch: {epoch}, Train Loss: {np.mean(train_loss)}, Test Loss: {np.mean(test_loss)}, Train Acc: {train_acc}, Test Acc: {test_acc}')
-    # plt_losses(train_losses,test_losses,EPOCHS)
+        if(VERBOSE>0):
+            print(f'Epoch: {epoch}, Train Loss: {np.mean(train_loss)}, Test Loss: {np.mean(test_loss)}, Train Acc: {train_acc}, Test Acc: {test_acc}')
+    if(VERBOSE>0):
+        plt_losses(train_losses,test_losses,EPOCHS)
     return np.array(train_loss), np.array(test_loss)
 
 def run_instance(amount=0.0,largest=False,strategy='magnitude'):
-    train_dataset,test_dataset=load_dataset(dataset='cifar10')
+    train_dataset,test_dataset=load_dataset(dataset='mnist')
     train_loader,test_loader=load_data(train_dataset,test_dataset)
-    model=simple_net(32*32*3,NUM_CLASSES)
+    model=simple_net(28*28,HIDDEN_SIZE,NUM_CLASSES)
     criterion=nn.CrossEntropyLoss()
     optimizer=optim.SGD(model.parameters(),lr=LR)
     privacy_engine = MaskedPrivacyEngine(amount=amount,largest=largest,strategy=strategy,secure_mode=False)

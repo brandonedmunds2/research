@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 from torchvision import datasets, transforms
-from sklearn.model_selection import train_test_split
 from experiment.src.constants import *
 
 def load_dataset(dataset='cifar10'):
@@ -23,14 +22,25 @@ def load_dataset(dataset='cifar10'):
                 transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD)
             ])
         )
-    elif(dataset=='gaussian'):
-        x=np.random.normal(scale=GAUSSIN_SIGMA,size=(GAUSSIAN_N,GAUSSIAN_D))
-        w=np.random.normal(scale=GAUSSIN_SIGMA/GAUSSIAN_D,size=GAUSSIAN_D)
-        e=np.random.normal(scale=GAUSSIN_SIGMA,size=GAUSSIAN_N)
-        y=np.matmul(x,w)+e
-        x_train,x_test,y_train,y_test=train_test_split(x,y,random_state=0)
-        train_dataset=torch.utils.data.TensorDataset(torch.Tensor(x_train),torch.Tensor(y_train))
-        test_dataset=torch.utils.data.TensorDataset(torch.Tensor(x_test),torch.Tensor(y_test))
+    elif(dataset=='mnist'):
+        train_dataset=datasets.MNIST(
+            LOC+"data",
+            train=True,
+            download=True,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(MNIST_MEAN, MNIST_STD)
+            ])
+        )
+        test_dataset=datasets.MNIST(
+            LOC+"data",
+            train=False,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(MNIST_MEAN, MNIST_STD)
+            ])
+        )
+        train_dataset=torch.utils.data.Subset(train_dataset,np.random.choice(len(train_dataset),MNIST_SAMPLES,replace=False))
     return train_dataset,test_dataset
 
 def load_data(train_dataset,test_dataset,attack=False):
