@@ -28,13 +28,10 @@ def load_dataset(dataset='cifar10'):
         )
         ii = list(np.where(np.array(train_dataset.targets) == train_dataset.class_to_idx['dog'])[0])
         ii.extend(list(np.where(np.array(train_dataset.targets) == train_dataset.class_to_idx['cat'])[0]))
-        train_dataset.targets=train_dataset.targets[ii]
-        train_dataset.data=train_dataset.data[ii]
+        train_dataset=torch.utils.data.Subset(train_dataset,np.random.choice(ii,CIFAR10_SAMPLES,replace=False))
         ii = list(np.where(np.array(test_dataset.targets) == test_dataset.class_to_idx['dog'])[0])
         ii.extend(list(np.where(np.array(test_dataset.targets) == test_dataset.class_to_idx['cat'])[0]))
-        test_dataset.targets=test_dataset.targets[ii]
-        test_dataset.data=test_dataset.data[ii]
-        train_dataset=torch.utils.data.Subset(train_dataset,np.random.choice(len(train_dataset),CIFAR10_SAMPLES,replace=False))
+        test_dataset=torch.utils.data.Subset(test_dataset,ii)
     elif(dataset=='mnist'):
         train_dataset=datasets.MNIST(
             LOC+"data",
