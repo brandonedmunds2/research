@@ -82,9 +82,9 @@ def train_test(model,train_loader,test_loader,optimizer,criterion):
     return np.array(train_loss), np.array(test_loss)
 
 def run_instance(amount=0.0,largest=False,strategy='magnitude'):
-    train_dataset,test_dataset=load_dataset(dataset='mnist')
+    train_dataset,test_dataset=load_dataset(dataset='cifar10')
     train_loader,test_loader=load_data(train_dataset,test_dataset)
-    model=simple_net(28*28,HIDDEN_SIZE,NUM_CLASSES)
+    model=simple_net(8*8,HIDDEN_SIZE,NUM_CLASSES)
     criterion=nn.CrossEntropyLoss()
     optimizer=optim.SGD(model.parameters(),lr=LR)
     privacy_engine = MaskedPrivacyEngine(amount=amount,largest=largest,strategy=strategy,secure_mode=False)
