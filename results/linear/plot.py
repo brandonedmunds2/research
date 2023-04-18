@@ -5,7 +5,8 @@ import matplotlib.cm as cm
 from itertools import cycle
 
 # data=pandas.read_excel("./results/linear/AuditResults.xlsx",0).fillna("")
-data=pandas.read_excel("./results/linear/AuditResults.xlsx",1).fillna("")
+# data=pandas.read_excel("./results/linear/AuditResults.xlsx",1).fillna("")
+data=pandas.read_excel("./results/linear/AuditResults.xlsx",2).fillna("")
 
 def all_plot(data,descs,ax,x="Attack AUC",y="Test Acc (%)"):
     ax.set_xlabel(x)

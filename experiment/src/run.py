@@ -81,13 +81,13 @@ def train_test(model,train_loader,test_loader,optimizer,criterion):
         plt_losses(train_losses,test_losses,EPOCHS)
     return np.array(train_loss), np.array(test_loss)
 
-def run_instance(amount=0.0,largest=False,strategy='magnitude'):
+def run_instance(amount=0.0,strategy='magnitude'):
     train_dataset,test_dataset=load_dataset(dataset='cifar10')
     train_loader,test_loader=load_data(train_dataset,test_dataset)
     model=simple_net(8*8,HIDDEN_SIZE,NUM_CLASSES)
     criterion=nn.CrossEntropyLoss()
     optimizer=optim.SGD(model.parameters(),lr=LR)
-    privacy_engine = MaskedPrivacyEngine(amount=amount,largest=largest,strategy=strategy,secure_mode=False)
+    privacy_engine = MaskedPrivacyEngine(amount=amount,strategy=strategy,secure_mode=False)
     model, optimizer, train_loader = privacy_engine.make_private(
         module=model,
         optimizer=optimizer,
@@ -103,13 +103,13 @@ def run_instance(amount=0.0,largest=False,strategy='magnitude'):
     attack_auc=attack(np.array(train_loss),np.array(test_loss))
     return test_acc, attack_auc
 
-def main(params=[(0.0,False,'magnitude')]):
+def main(params=[(0.0,'magnitude')]):
     columns=['Description','Param','Test Acc (%)','Attack AUC']
     df=pd.DataFrame(columns=columns)
     for p in params:
         print(p)
         test_acc,attack_auc=run_instance(*p)
-        new={'Description':p[2],'Param':p[0],'Test Acc (%)':test_acc.item(),'Attack AUC':attack_auc}
+        new={'Description':p[1],'Param':p[0],'Test Acc (%)':test_acc.item(),'Attack AUC':attack_auc}
         df=df.append(new,ignore_index=True)
     df.to_csv(LOC+'result.csv',index=False)
 

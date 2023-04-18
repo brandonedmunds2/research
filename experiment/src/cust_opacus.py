@@ -6,7 +6,7 @@ from opacus.optimizers.optimizer import _check_processed_flag, _mark_as_processe
 from typing import List, Union
 from torch.nn.utils.prune import _compute_nparams_toprune, _validate_pruning_amount
 
-def compute_mask(t,amount,largest,strategy):
+def compute_mask(t,amount,strategy,prev_mask):
         default_mask=torch.ones_like(t)
         tensor_size = t.nelement()
         nparams_toprune = _compute_nparams_toprune(amount, tensor_size)
@@ -17,16 +17,25 @@ def compute_mask(t,amount,largest,strategy):
                 prob = torch.rand_like(t)
                 topk = torch.topk(prob.view(-1), k=nparams_toprune)
             elif(strategy=='magnitude'):
-                topk = torch.topk(torch.abs(t).view(-1), k=nparams_toprune, largest=largest)
+                topk = torch.topk(torch.abs(t).view(-1), k=nparams_toprune, largest=False)
+            elif(strategy=='magnitude reverse'):
+                topk = torch.topk(torch.abs(t).view(-1), k=nparams_toprune, largest=True)
+            elif(strategy=='rolling'):
+                if(prev_mask == None):
+                    prob = torch.rand_like(t)
+                    topk = torch.topk(prob.view(-1), k=nparams_toprune)
+                else:
+                    mask=torch.roll(prev_mask,1)
+                    return mask
             mask.view(-1)[topk.indices] = 0
         return mask
 
 class MaskedDPOptimizer(DPOptimizer):
-    def __init__(self, amount,largest,strategy, *args, **kwargs):
+    def __init__(self, amount,strategy, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.amount=amount
-        self.largest=largest
         self.strategy=strategy
+        self.prev_mask=None
     def add_noise(self):
         for p in self.params:
             _check_processed_flag(p.summed_grad)
@@ -37,17 +46,16 @@ class MaskedDPOptimizer(DPOptimizer):
                 generator=self.generator,
                 secure_mode=self.secure_mode,
             )
-            mask=compute_mask(p,amount=self.amount,largest=self.largest,strategy=self.strategy)
+            mask=compute_mask(p,amount=self.amount,strategy=self.strategy,prev_mask=self.prev_mask)
             noise.mul_(mask)
             p.grad = (p.summed_grad + noise).view_as(p)
 
             _mark_as_processed(p.summed_grad)
 
 class MaskedPrivacyEngine(PrivacyEngine):
-    def __init__(self, amount,largest,strategy, *args, **kwargs):
+    def __init__(self, amount,strategy, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.amount=amount
-        self.largest=largest
         self.strategy=strategy
     def _prepare_optimizer(
         self,
@@ -80,7 +88,6 @@ class MaskedPrivacyEngine(PrivacyEngine):
             generator=generator,
             secure_mode=self.secure_mode,
             amount=self.amount,
-            largest=self.largest,
             strategy=self.strategy
         )
     
