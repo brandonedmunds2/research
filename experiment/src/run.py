@@ -111,6 +111,7 @@ def main(params=[(0.0,'magnitude')]):
         test_acc,attack_auc=run_instance(*p)
         new={'Description':p[1],'Param':p[0],'Test Acc (%)':test_acc.item(),'Attack AUC':attack_auc}
         df=df.append(new,ignore_index=True)
+    print(df)
     df.to_csv(LOC+'result.csv',index=False)
 
 if __name__ == "__main__":
